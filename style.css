@@ -29,6 +29,12 @@
 /* Fire style: flames instead of people */
 :root[data-version="fire"] { --flame-amt: 0.35; --torch-amt: 0; }
 
+/* Glow 2: like Glow, but the sky and stars are still, at full strength; the fire only
+   lights the lower part of the screen (scene.js squashes it and fades it out below the sky). */
+:root[data-version="glow2"] { --sky-base: 1; --stars-base: 1; }
+:root[data-version="glow2"] .sky-lit,
+:root[data-version="glow2"] .stars-lit { display: none; }
+
 /* Static style: fully still, everything at full strength */
 :root[data-version="static"] {
   --sky-base: 1; --stars-base: 1; --text-opacity: 1;
@@ -51,7 +57,9 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
 
 /* Fire canvases: scene.js sizes and places each one so it covers the whole screen,
    wherever its parent box is, so every layer sees the same flames in the same place. */
-canvas.fire { position: absolute; display: block; }
+/* Black background: if the video is blocked or hasn't started, "no fire" = darkness.
+   (An empty canvas would otherwise count as fully lit and show every lit layer at full.) */
+canvas.fire { position: absolute; display: block; background: #000; }
 
 /* A "lit" group = art multiplied by the firelight (dark where there's no fire),
    cut back to the art's shape, then added on top as light. */

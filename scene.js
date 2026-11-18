@@ -10,8 +10,11 @@
 (function () {
   const root = document.documentElement;
   const scene = document.querySelector('.scene');
-  const STYLES = ['glow', 'fire', 'static'];
+  const STYLES = ['glow', 'fire', 'glow2', 'static'];
   let fireSpeed = 0.5;   // 0.5 = half speed
+  // Glow 2 only: where the fire starts (share of screen height from the top), how far it
+  // takes to fade in, and how much it's squashed vertically (1 = not squashed).
+  let fireTop = 0.25, fireFade = 0.15, squashBy = 1.6;
 
   // ---------- Star threshold: stars only appear where the fire is bright enough ----------
   let starThreshold = 0.6;
@@ -47,14 +50,27 @@
     relayout();
   }
 
-  // ---------- Glow / Fire / Static ----------
-  function setStyle(s) {
+  // ---------- Glow / Fire / Glow 2 / Static ----------
+  // auto = switched by the page itself (fire couldn't load), so don't change the address.
+  function setStyle(s, auto) {
     root.dataset.version = s;
     press('.style-switch', 'style', s);
-    setParam('style', s, s === 'glow');
+    if (!auto) setParam('style', s, s === 'glow');
     if (s === 'static') { if (video) video.pause(); }
-    else { startFire(); kick(); }
+    else {
+      startFire(); kick();
+      if (!gotFrame && !auto) { clearTimeout(fallbackTimer); fallbackTimer = setTimeout(fireFailed, 8000); }
+    }
     relayout();
+  }
+
+  // If the fire can't load (blocked by an ad blocker, autoplay refused, very slow
+  // connection...), fall back to Static instead of showing a half-working page.
+  let gotFrame = false, fallbackTimer = null;
+  function fireFailed() {
+    if (gotFrame || root.dataset.version === 'static') return;
+    root.dataset.fireFailed = 'true';
+    setStyle('static', true);
   }
 
   // ---------- Home / Program ----------
@@ -92,9 +108,13 @@
     video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
     // Kept "rendered" but invisible: some browsers stop decoding display:none videos.
     Object.assign(video.style, { position: 'fixed', width: '2px', height: '2px', opacity: '0', pointerEvents: 'none', left: '0', top: '0' });
-    for (const [src, type] of [['fire.webm', 'video/webm'], ['fire-small.mp4', 'video/mp4']]) {
-      const s = document.createElement('source'); s.src = src; s.type = type; video.appendChild(s);
-    }
+    const sources = [['fire.webm', 'video/webm'], ['fire-small.mp4', 'video/mp4']].map(([src, type]) => {
+      const s = document.createElement('source'); s.src = src; s.type = type; video.appendChild(s); return s;
+    });
+    // Every source failed (e.g. blocked): give up right away. Otherwise give it 8 seconds.
+    sources[sources.length - 1].addEventListener('error', fireFailed);
+    video.addEventListener('error', fireFailed);
+    fallbackTimer = setTimeout(fireFailed, 8000);
     document.body.appendChild(video);
     const setSpeed = () => { video.defaultPlaybackRate = fireSpeed; video.playbackRate = fireSpeed; };
     setSpeed();
@@ -139,15 +159,29 @@
       requestAnimationFrame(paint);
       if (video.readyState >= 2 && video.videoWidth && video.currentTime !== lastTime) {
         lastTime = video.currentTime;
-        // Scale the video to cover the screen, keeping its bottom edge (where the fire is).
-        const vw = video.videoWidth, vh = video.videoHeight, A = master.width / master.height;
+        if (!gotFrame) { gotFrame = true; clearTimeout(fallbackTimer); delete root.dataset.fireFailed; }
+        const MW = master.width, MH = master.height;
+        // Glow 2: the fire is squashed into the lower part of the screen (from fireTop down)
+        // and fades to black over the next fireFade, so it never reaches the sky.
+        const squash = root.dataset.version === 'glow2';
+        const top = squash ? fireTop * MH : 0, DH = MH - top;
+        // Scale the video to cover that area, keeping its bottom edge (where the fire is).
+        // (Squashing = taking a taller slice of video than the area's shape and fitting it in.)
+        const vw = video.videoWidth, vh = video.videoHeight, A = MW / (squash ? DH * squashBy : MH);
         let sx = 0, sy = 0, sw = vw, sh = vh;
         if (A > vw / vh) { sh = vw / A; sy = vh - sh; } else { sw = vh * A; sx = (vw - sw) / 2; }
-        mg.drawImage(video, sx, sy, sw, sh, 0, 0, master.width, master.height);
+        mg.fillStyle = '#000'; mg.fillRect(0, 0, MW, MH);
+        mg.drawImage(video, sx, sy, sw, sh, 0, top, MW, DH);
+        if (squash) {
+          const fade = mg.createLinearGradient(0, top, 0, top + fireFade * MH);
+          fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+          mg.fillStyle = fade; mg.fillRect(0, top, MW, fireFade * MH);
+        }
         for (const [, g] of canvases) g.drawImage(master, 0, 0);
 
         pg.drawImage(video, 0, 0, 8, 4);
-        const d = pg.getImageData(0, 0, 8, 4).data;
+        let d;
+        try { d = pg.getImageData(0, 0, 8, 4).data; } catch (e) { return; }   // some privacy tools block this
         let l = 0, r = 0;
         for (let y = 0; y < 4; y++) for (let x = 0; x < 8; x++) {
           const i = (y * 8 + x) * 4, v = (d[i] + d[i + 1] + d[i + 2]) / 765;
@@ -166,8 +200,9 @@
   // ---------- Start up ----------
   setPage();
   addEventListener('hashchange', setPage);
-  const startStyle = STYLES.includes(params.get('style')) ? params.get('style')
-    : STYLES.includes(root.dataset.version) ? root.dataset.version : 'glow';
+  // The page's HTML says "static" so it looks right even if this script never runs;
+  // the script then switches to the chosen style (Glow unless the address says otherwise).
+  const startStyle = STYLES.includes(params.get('style')) ? params.get('style') : 'glow';
   setStyle(startStyle);
   setTitle(params.get('title') === '2' ? '2' : '1');
   for (const b of document.querySelectorAll('.title-switch button')) b.addEventListener('click', () => setTitle(b.dataset.title));
@@ -187,6 +222,9 @@
       ['Stars without fire', '--stars-base', 0, 1, 0.05],
       ['Star threshold', 'star', 0.2, 1.2, 0.05],
       ['Fire speed', 'speed', 0.25, 1, 0.05],
+      ['Glow 2: fire top', 'fireTop', 0, 0.7, 0.01],
+      ['Glow 2: fade', 'fireFade', 0, 0.5, 0.01],
+      ['Glow 2: squash', 'squashBy', 1, 3, 0.05],
       ['Text size', '--text-width', 15, 80, 0.1, 'vw'],
     ];
     const panel = document.createElement('div');
@@ -195,12 +233,16 @@
       const l = document.createElement('label'); l.textContent = label;
       const i = document.createElement('input'); Object.assign(i, { type: 'range', min, max, step });
       const o = document.createElement('span');
+      const glow2 = { fireTop: () => fireTop, fireFade: () => fireFade, squashBy: () => squashBy };
       i.value = key === 'star' ? starThreshold : key === 'speed' ? fireSpeed
-        : parseFloat(getComputedStyle(root).getPropertyValue(key));
+        : glow2[key] ? glow2[key]() : parseFloat(getComputedStyle(root).getPropertyValue(key));
       o.textContent = i.value;
       i.addEventListener('input', () => {
         o.textContent = i.value;
-        if (key === 'star') setStarThreshold(+i.value);
+        if (key === 'fireTop') { fireTop = +i.value; lastTime = -1; }
+        else if (key === 'fireFade') { fireFade = +i.value; lastTime = -1; }
+        else if (key === 'squashBy') { squashBy = +i.value; lastTime = -1; }
+        else if (key === 'star') setStarThreshold(+i.value);
         else if (key === 'speed') { fireSpeed = +i.value; if (video) video.setSpeed(); }
         else { root.style.setProperty(key, i.value + unit); relayout(); }
       });
