@@ -23,6 +23,7 @@
   /* Set many times a second by scene.js from the fire video's brightness (0..1). */
   --flick-l: 0.5;
   --flick-r: 0.5;
+  --flick: 0.5;            /* average of the two */
 }
 
 /* Fire style: flames instead of people */
@@ -105,17 +106,42 @@ canvas.fire { position: absolute; display: block; }
   gap: 1.6vh;
 }
 
-/* Title width: the size you picked, but never so tall it crowds the middle area. */
-.title-box { position: relative; flex: none; }
-.title-box.t1 { aspect-ratio: 1171 / 203; width: min(92vw, max(300px, var(--text-width)), 24vh * 1171 / 203); }
-.title-box.t2 { aspect-ratio: 1400 / 561; width: min(92vw, max(300px, var(--text-width)), 32vh * 1400 / 561); }
+/* Title size: the width you picked, but never so tall it crowds the middle area.
+   --title-ar = width / height of each title image.
+   --tail-x / --menu-top: where the long tail of the "t" in Solstice is (as a share of the
+   title's width) and how far down the title (as a share of its height) the menu starts,
+   so the tail runs down between Auditions and Playlist. */
+:root, :root[data-title="1"] {
+  --title-ar: 5.7685;  --title-w: min(92vw, max(300px, var(--text-width)), 24vh * 5.7685);
+  --tail-x: 0.827;     --menu-top: 0.9;
+}
+:root[data-title="2"] {
+  --title-ar: 2.4955;  --title-w: min(92vw, max(300px, var(--text-width)), 32vh * 2.4955);
+  --tail-x: 0.826;     --menu-top: 0.7;
+}
+
+/* The title and the menu share this box; the menu overlaps the bottom of the title. */
+.title-area {
+  --btn-h: clamp(26px, min(6vh, 3.8vw), 64px);
+  --title-h: calc(var(--title-w) / var(--title-ar));
+  position: relative; flex: none;
+  width: var(--title-w); height: var(--title-h);
+  /* leave room below for the part of the menu that hangs under the title */
+  margin-bottom: max(0px, calc(var(--title-h) * (var(--menu-top) - 1) + var(--btn-h)));
+}
+.title-box { position: absolute; inset: 0; }
 :root:not([data-title="2"]) .title-box.t2,
 :root[data-title="2"] .title-box.t1 { display: none; }
 
 .year {
-  display: block; flex: none;
+  position: relative; flex: none;
   aspect-ratio: 635 / 227;
   width: min(30vw, max(90px, calc(var(--text-width) * 0.22)), 9vh * 635 / 227);
+}
+.year img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.year .text-fire {
+  -webkit-mask: url(2026.png) 0 0 / 100% 100% no-repeat;
+          mask: url(2026.png) 0 0 / 100% 100% no-repeat;
 }
 
 .title-box img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -142,15 +168,30 @@ canvas.fire { position: absolute; display: block; }
 }
 .text-fire canvas.fire { filter: brightness(var(--fire-boost)); }
 
-/* ---- Menu ---- */
+/* ---- Menu ----
+   Normally: a zero-width anchor at the "t" tail, with the first five buttons ending just left
+   of it and the last two starting just right of it. If that doesn't fit the screen
+   (scene.js adds .wrap), it becomes an ordinary centred, wrapping row under the title. */
 .menu {
-  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
-  gap: 0.6vh 1.4vw;
-  max-width: 94vw;
-  position: relative; z-index: 2;
+  --gap: 1.2vw;          /* between buttons */
+  --tail-gap: 2.4vw;     /* the gap the tail runs down through */
+  position: absolute; z-index: 2;
+  left: calc(var(--tail-x) * 100%); top: calc(var(--menu-top) * 100%);
+  width: 0; height: var(--btn-h);
 }
+:root:not([data-version="static"]) .menu { opacity: calc(0.8 + 0.2 * var(--flick)); }
+.menu .group { position: absolute; top: 0; display: flex; gap: var(--gap); }
+.menu .left  { right: calc(var(--tail-gap) / 2); }
+.menu .right { left: calc(var(--tail-gap) / 2); }
+.title-area:has(.menu.wrap) { margin-bottom: calc(2 * var(--btn-h) + 2.5vh); }
+.menu.wrap {
+  top: calc(100% + 1vh);
+  left: 50%; width: 94vw; height: auto; transform: translateX(-50%);
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8vh var(--gap);
+}
+.menu.wrap .group { position: static; display: contents; }
 .menu a { display: block; line-height: 0; border-radius: 4px; transition: filter .2s, transform .2s; }
-.menu img { display: block; height: clamp(26px, min(6vh, 3.8vw), 64px); width: auto; }
+.menu img { display: block; height: var(--btn-h); width: auto; }
 .menu a:hover, .menu a:focus-visible { filter: brightness(1.3) drop-shadow(0 0 6px rgba(255,190,90,.6)); transform: translateY(-2px); }
 .menu a:focus-visible { outline: 2px solid rgba(255,200,120,.8); outline-offset: 3px; }
 .menu a[aria-current="page"] { filter: drop-shadow(0 0 5px rgba(255,190,90,.55)); }
@@ -165,11 +206,12 @@ canvas.fire { position: absolute; display: block; }
 .people-box > img { position: absolute; display: block; }
 .people-base { inset: 0; width: 100%; height: 100%; }
 
-/* Torch flames: cut out of the people art so they can move. */
+/* Torch flames: cut out of the people art. They don't move; they only brighten and dim
+   with the fire. */
 .flame.left  { left: 13.672%; top: 27.881%; width: 11.328%; height: 36.245%; }
 .flame.right { left: 64.844%; top: 27.881%; width: 6.641%;  height: 38.104%; }
-:root:not([data-version="static"]) .flame.left  { filter: url(#flame-warp-l) brightness(calc(0.85 + 0.45 * var(--flick-l))); }
-:root:not([data-version="static"]) .flame.right { filter: url(#flame-warp-r) brightness(calc(0.85 + 0.45 * var(--flick-r))); }
+:root:not([data-version="static"]) .flame.left  { filter: brightness(calc(0.85 + 0.45 * var(--flick-l))); }
+:root:not([data-version="static"]) .flame.right { filter: brightness(calc(0.85 + 0.45 * var(--flick-r))); }
 
 /* Glow around each torch, flickering with the fire */
 .torch {

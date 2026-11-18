@@ -16,21 +16,6 @@
       <feFuncR type="linear"/><feFuncG type="linear"/><feFuncB type="linear"/>
     </feComponentTransfer>
   </filter>
-  <!-- Torch flames: a slowly shifting ripple that bends the painted flames -->
-  <filter id="flame-warp-l" x="-20%" y="-20%" width="140%" height="140%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.04 0.09" numOctaves="2" seed="3" result="n">
-      <animate attributeName="baseFrequency" dur="2.3s" repeatCount="indefinite"
-               values="0.04 0.09; 0.05 0.07; 0.035 0.1; 0.04 0.09"/>
-    </feTurbulence>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
-  </filter>
-  <filter id="flame-warp-r" x="-20%" y="-20%" width="140%" height="140%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.05 0.1" numOctaves="2" seed="11" result="n">
-      <animate attributeName="baseFrequency" dur="1.9s" repeatCount="indefinite"
-               values="0.05 0.1; 0.04 0.08; 0.055 0.11; 0.05 0.1"/>
-    </feTurbulence>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/>
-  </filter>
 </svg>
 
 <div class="scene">
@@ -68,7 +53,14 @@
 
   <!-- Middle 50%: year, title, menu -->
   <div class="middle">
-    <img class="year" src="2026.png" alt="2026">
+    <!-- 2026: same treatment as the title lettering -->
+    <div class="year">
+      <img class="text-base" src="2026.png" alt="2026">
+      <div class="text-fire" aria-hidden="true"><canvas class="fire"></canvas></div>
+    </div>
+
+    <!-- Title and menu share one box: the menu overlaps the bottom of the title -->
+    <div class="title-area">
 
     <!-- Title 1: splash (only where firelit), lettering, fire glowing through the lettering -->
     <div class="title-box t1" role="heading" aria-level="1">
@@ -90,15 +82,21 @@
       <div class="text-fire" aria-hidden="true"><canvas class="fire"></canvas></div>
     </div>
 
+    <!-- Menu: the "t" tail of Solstice runs down between Auditions and Playlist -->
     <nav class="menu" aria-label="Main">
-      <a href="#home" data-page="home"><img src="menu/home.png" alt="Home"></a>
-      <a href="#program" data-page="program"><img src="menu/program.png" alt="Program"></a>
-      <a href="https://www.eventbrite.com/e/bay-area-secular-solstice-2026-tickets-2004527583964" target="_blank" rel="noopener"><img src="menu/tickets.png" alt="Tickets"></a>
-      <a href="https://partiful.com/events/QCfT35d3zo9BMti8f3sm/" target="_blank" rel="noopener"><img src="menu/partiful.png" alt="Partiful"></a>
-      <a href="https://www.lesswrong.com/posts/YXe6Ni3vMCYdNWmqN/bay-area-solstice-2026-auditions" target="_blank" rel="noopener"><img src="menu/auditions.png" alt="Auditions"></a>
-      <a href="https://open.spotify.com/playlist/4cjj2xFFtVw1xn0FonQDgu?si=fca6d054ec1f41da" target="_blank" rel="noopener"><img src="menu/playlist.png" alt="Playlist"></a>
-      <a href="https://www.lesswrong.com/events/umzGbxosnsxKPLQpX/bay-area-winter-solstice" target="_blank" rel="noopener"><img src="menu/lesswrong.png" alt="LessWrong"></a>
+      <div class="group left">
+        <a href="#home" data-page="home"><img src="menu/home.png" alt="Home"></a>
+        <a href="https://www.eventbrite.com/e/bay-area-secular-solstice-2026-tickets-2004527583964" target="_blank" rel="noopener"><img src="menu/tickets.png" alt="Tickets"></a>
+        <a href="https://partiful.com/events/QCfT35d3zo9BMti8f3sm/" target="_blank" rel="noopener"><img src="menu/partiful.png" alt="Partiful"></a>
+        <a href="#program" data-page="program"><img src="menu/program.png" alt="Program"></a>
+        <a href="https://www.lesswrong.com/posts/YXe6Ni3vMCYdNWmqN/bay-area-solstice-2026-auditions" target="_blank" rel="noopener"><img src="menu/auditions.png" alt="Auditions"></a>
+      </div>
+      <div class="group right">
+        <a href="https://open.spotify.com/playlist/4cjj2xFFtVw1xn0FonQDgu?si=fca6d054ec1f41da" target="_blank" rel="noopener"><img src="menu/playlist.png" alt="Playlist"></a>
+        <a href="https://www.lesswrong.com/events/umzGbxosnsxKPLQpX/bay-area-winter-solstice" target="_blank" rel="noopener"><img src="menu/lesswrong.png" alt="LessWrong"></a>
+      </div>
     </nav>
+    </div>
   </div>
 </div>
 

@@ -69,7 +69,20 @@
 
   // ---------- The fire (created the first time a moving style is shown) ----------
   let video = null, layout = () => {}, lastTime = -1;
-  const relayout = () => { layout(); lastTime = -1; };
+  const relayout = () => { fitMenu(); layout(); lastTime = -1; };
+
+  // Menu split around the "t" tail if both halves fit on screen; otherwise a wrapped row.
+  const menu = document.querySelector('.menu');
+  function fitMenu() {
+    menu.classList.remove('wrap');
+    const margin = 8;
+    const l = menu.querySelector('.left').getBoundingClientRect();
+    const r = menu.querySelector('.right').getBoundingClientRect();
+    if (l.left < margin || r.right > innerWidth - margin) menu.classList.add('wrap');
+  }
+  addEventListener('resize', relayout);
+  addEventListener('load', relayout);             // images/fonts loaded: boxes may have moved
+  if (document.fonts) document.fonts.ready.then(relayout);
   const kick = () => { if (video && video.paused && root.dataset.version !== 'static') video.play().catch(() => {}); };
 
   function startFire() {
@@ -109,9 +122,6 @@
       }
     };
     layout();
-    addEventListener('resize', relayout);
-    addEventListener('load', relayout);           // images/fonts loaded: boxes may have moved
-    if (document.fonts) document.fonts.ready.then(relayout);
 
     // Paint each frame + measure the flicker.
     const probe = document.createElement('canvas'); probe.width = 8; probe.height = 4;
@@ -147,6 +157,7 @@
         fr += (norm(rr, r / 16) - fr) * 0.4;
         root.style.setProperty('--flick-l', fl.toFixed(3));
         root.style.setProperty('--flick-r', fr.toFixed(3));
+        root.style.setProperty('--flick', ((fl + fr) / 2).toFixed(3));
       }
     }
     paint();
