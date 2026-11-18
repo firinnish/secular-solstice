@@ -1,3 +1,7 @@
 ﻿.claude/
 Thumbs.db
 .DS_Store
+
+# Big working copies of the fire video (the site uses fire.webm / fire-small.mp4)
+fire.mp4
+fire-loop.mp4

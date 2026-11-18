@@ -1,0 +1,171 @@
+/* Secular Solstice: shared styles for every version of the page.
+   Each page sets data-version on <html>: "favourite", "flames" or "static". */
+
+:root {
+  /* ---- Knobs (add ?tune to the address to get sliders for these) ---- */
+  --text-opacity: 0.3;     /* plain lettering, always visible */
+  --fire-boost: 1.6;       /* how far/bright the firelight reaches (1 = video as-is) */
+  --sky-base: 0.1;         /* sky painting's brightness with no fire on it (1 = unaffected by fire) */
+  --stars-base: 0;         /* stars' brightness with no fire on them */
+  --text-width: 44.6vw;    /* lettering width (44.6% of the shared canvas = 44% for the letters alone) */
+  --title-y: 36%;          /* where the title's centre sits, from the top of the screen */
+
+  --glow-amt: 0.1;         /* warm firelight washing over the black background */
+  --flame-amt: 0;          /* the actual flames, visible rising from the bottom edge */
+  --torch-amt: 0.25;       /* glow around the people's torches */
+
+  /* Set many times a second by scene.js from the fire video's brightness (0..1). */
+  --flick-l: 0.5;
+  --flick-r: 0.5;
+}
+
+/* Version 2: flames instead of people */
+:root[data-version="flames"] { --flame-amt: 0.35; --torch-amt: 0; }
+
+/* Version 3: fully still: no video, no sparkles, no flames */
+:root[data-version="static"] { --sky-base: 0.7; --text-opacity: 0.85; --glow-amt: 0; --torch-amt: 0; }
+
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+
+/* The whole screen, exactly: never taller or wider than the window, so nothing scrolls.
+   Top 25% = sky, bottom 25% = people, the middle stays dark for the title and menus. */
+.scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;           /* phones: the visible height, excluding the address bar */
+  overflow: hidden;
+}
+
+.layer { position: absolute; inset: 0; }
+
+/* Fire canvases: scene.js sizes and places each one so it covers the whole screen,
+   wherever its parent box is, so every layer sees the same flames in the same place. */
+canvas.fire { position: absolute; display: block; }
+
+/* A "lit" group = art multiplied by the firelight (dark where there's no fire),
+   cut back to the art's shape, then added on top as light. */
+.lit { position: absolute; inset: 0; isolation: isolate; mix-blend-mode: screen; }
+.lit canvas.fire {
+  filter: grayscale(1) brightness(var(--fire-boost));
+  mix-blend-mode: multiply;
+}
+
+/* ---- Sky band: top 25% of the screen ---- */
+.sky-band {
+  position: absolute; left: 0; top: 0; width: 100%; height: 25%;
+  overflow: hidden;
+  -webkit-mask: linear-gradient(to bottom, #000 75%, transparent);   /* soft lower edge */
+          mask: linear-gradient(to bottom, #000 75%, transparent);
+}
+.sky-band img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+}
+.sky-base { opacity: var(--sky-base); }
+.sky-lit {
+  opacity: calc(1 - var(--sky-base));
+  mix-blend-mode: plus-lighter;          /* sky-base + fire share = 100% where fully lit */
+  -webkit-mask: url(sky-band.png) top center / cover no-repeat;
+          mask: url(sky-band.png) top center / cover no-repeat;
+}
+.stars-base { opacity: var(--stars-base); }
+.stars-lit {
+  -webkit-mask: url(stars-band.png) top center / cover no-repeat;
+          mask: url(stars-band.png) top center / cover no-repeat;
+}
+/* Stars use their own light: only where the fire is bright enough (see #star-threshold),
+   and then fully bright. */
+.stars-lit canvas.fire {
+  filter: grayscale(1) brightness(var(--fire-boost)) url(#star-threshold);
+}
+
+/* ---- Background glow ---- */
+.opt-glow { mix-blend-mode: screen; opacity: var(--glow-amt); }
+.opt-glow canvas.fire { filter: blur(40px) saturate(1.3) brightness(1.3); }
+
+/* ---- Visible flames rising from the bottom ---- */
+.opt-flames {
+  mix-blend-mode: screen;
+  opacity: var(--flame-amt);
+  -webkit-mask: linear-gradient(to top, #000 0%, #000 12%, transparent 55%);
+          mask: linear-gradient(to top, #000 0%, #000 12%, transparent 55%);
+}
+
+/* ---- Title: lettering + smudge, sharing one box so they always line up ---- */
+.title-box {
+  position: absolute;
+  left: 50%; top: var(--title-y);
+  width: min(92vw, max(300px, var(--text-width)));
+  aspect-ratio: 1171 / 203;
+  transform: translate(-50%, -50%);
+}
+.title-box img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.smudge-lit {
+  -webkit-mask: url(smudge.png) 0 0 / 100% 100% no-repeat;
+          mask: url(smudge.png) 0 0 / 100% 100% no-repeat;
+}
+.text-base { opacity: var(--text-opacity); }
+.text-fire {                                 /* fire glowing through the letters, full colour */
+  position: absolute; inset: 0;
+  mix-blend-mode: screen;
+  -webkit-mask: url(text.png) 0 0 / 100% 100% no-repeat;
+          mask: url(text.png) 0 0 / 100% 100% no-repeat;
+}
+.text-fire canvas.fire { filter: brightness(var(--fire-boost)); }
+
+/* ---- People: bottom 25% of the screen ---- */
+.people-box {
+  position: absolute; left: 50%; bottom: 0;
+  height: min(25%, calc(100vw * 538 / 2560));   /* never wider than the screen */
+  aspect-ratio: 2560 / 538;
+  transform: translateX(-50%);
+}
+.people-box > img { position: absolute; display: block; }
+.people-base { inset: 0; width: 100%; height: 100%; }
+
+/* Torch flames: cut out of the people art so they can move.
+   Positions are the cut-out boxes, as % of the people image. */
+.flame { transform-origin: 50% 100%; }
+.flame.left  { left: 13.672%; top: 27.881%; width: 11.328%; height: 36.245%; }
+.flame.right { left: 64.844%; top: 27.881%; width: 6.641%;  height: 38.104%; }
+:root:not([data-version="static"]) .flame.left {
+  filter: url(#flame-warp-l) brightness(calc(0.85 + 0.45 * var(--flick-l)));
+  transform: scale(calc(0.97 + 0.06 * var(--flick-l)), calc(0.92 + 0.14 * var(--flick-l)));
+}
+:root:not([data-version="static"]) .flame.right {
+  filter: url(#flame-warp-r) brightness(calc(0.85 + 0.45 * var(--flick-r)));
+  transform: scale(calc(0.97 + 0.06 * var(--flick-r)), calc(0.92 + 0.14 * var(--flick-r)));
+}
+
+/* Glow around each torch, flickering with the fire */
+.torch {
+  position: absolute;
+  width: 40%; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,190,90,.9), rgba(255,120,30,.45) 35%, rgba(200,60,10,.15) 65%, transparent);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.torch.left  { left: 19.3%; top: 46%; opacity: calc(var(--torch-amt) * (0.35 + 0.9 * var(--flick-l))); }
+.torch.right { left: 68.2%; top: 47%; opacity: calc(var(--torch-amt) * (0.35 + 0.9 * var(--flick-r))); }
+
+/* ---- What each version leaves out ---- */
+:root[data-version="flames"] .people-box { display: none; }
+:root[data-version="static"] .lit,
+:root[data-version="static"] .text-fire,
+:root[data-version="static"] .opt-glow,
+:root[data-version="static"] .opt-flames,
+:root[data-version="static"] .stars-base,
+:root[data-version="static"] .torch { display: none; }
+
+/* ---- Tuning panel (only with ?tune in the address) ---- */
+.tuning {
+  position: fixed; right: 12px; bottom: 12px; z-index: 10;
+  max-height: calc(100vh - 24px); overflow: auto;
+  background: rgba(30,30,30,.88); color: #ddd;
+  font: 13px system-ui, sans-serif;
+  padding: 10px 12px; border-radius: 8px;
+  display: grid; grid-template-columns: auto 140px 2.5em; gap: 6px 8px; align-items: center;
+}
