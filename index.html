@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secular Solstice</title>
+<style>
+  :root {
+    /* ---- Knobs worth playing with (the sliders in the corner change these live) ---- */
+    --text-opacity: 0.6;   /* plain lettering, always visible */
+    --fire-boost: 1.6;     /* how far/bright the firelight reaches (1 = video as-is) */
+    --stars-base: 0;       /* stars' brightness with no fire on them (0 = only firelit) */
+    --text-width: 60%;     /* lettering width, as a share of the page width */
+  }
+
+  html, body { margin: 0; background: #000; }
+
+  /* The picture area: full width, same 16:9 shape as the video and sky art,
+     so the firelight lines up the same way across every layer. */
+  .scene {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .layer { position: absolute; inset: 0; }
+  .layer > img.full { width: 100%; height: 100%; display: block; }
+
+  /* The fire video, stretched over the whole picture area.
+     Black-and-white version = "how much light is here", used to light layers. */
+  .layer video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .light video {
+    filter: grayscale(1) brightness(var(--fire-boost));
+    mix-blend-mode: multiply;    /* art × light: dark where there is no fire */
+  }
+
+  /* A "lit" layer = the art, multiplied by the firelight, then cut back to the art's shape. */
+  /* "screen" adds the lit result as light, so unlit (black) parts change nothing underneath. */
+  .light { isolation: isolate; mix-blend-mode: screen; }
+  .stars-lit {
+    -webkit-mask: url(stars.png) 0 0 / 100% 100% no-repeat;
+            mask: url(stars.png) 0 0 / 100% 100% no-repeat;
+  }
+  .stars-base { opacity: var(--stars-base); }
+
+  /* Lettering and smudge: centred in the picture area. */
+  .centered {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: var(--text-width);
+    transform: translate(-50%, -50%);
+    display: block;
+  }
+  .smudge-lit {
+    -webkit-mask: url(smudge.png) center / var(--text-width) auto no-repeat;
+            mask: url(smudge.png) center / var(--text-width) auto no-repeat;
+  }
+  .text-base { opacity: var(--text-opacity); }
+  /* Fire glowing through the letters (full colour, brightening the gold). */
+  .text-fire video { filter: brightness(var(--fire-boost)); }
+  .text-fire {
+    mix-blend-mode: screen;
+    -webkit-mask: url(text.png) center / var(--text-width) auto no-repeat;
+            mask: url(text.png) center / var(--text-width) auto no-repeat;
+  }
+
+  /* ---- Temporary tuning panel: delete this block (and the panel below) when done ---- */
+  .tuning {
+    position: fixed; right: 12px; bottom: 12px;
+    background: rgba(30,30,30,.85); color: #ddd;
+    font: 13px system-ui, sans-serif;
+    padding: 10px 12px; border-radius: 8px;
+    display: grid; grid-template-columns: auto 140px 2.5em; gap: 6px 8px; align-items: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <!-- 1. Sky painting: always visible, untouched by the fire -->
+  <div class="layer"><img class="full" src="sky.png" alt=""></div>
+
+  <!-- 2. Stars: optional faint base, plus the firelit version -->
+  <div class="layer stars-base"><img class="full" src="stars.png" alt=""></div>
+  <div class="layer light stars-lit">
+    <img class="full" src="stars.png" alt="">
+    <video src="fire.mp4" autoplay muted loop playsinline></video>
+  </div>
+
+  <!-- 3. Smudge behind the words: only visible where the fire lights it -->
+  <div class="layer light smudge-lit">
+    <img class="centered" src="smudge.png" alt="">
+    <video src="fire.mp4" autoplay muted loop playsinline></video>
+  </div>
+
+  <!-- 4. The words: always readable, plus fire glowing through them -->
+  <img class="centered text-base" src="text.png" alt="Secular Solstice">
+  <div class="layer text-fire" aria-hidden="true">
+    <video src="fire.mp4" autoplay muted loop playsinline></video>
+  </div>
+</div>
+
+<!-- Temporary tuning panel -->
+<div class="tuning">
+  <label for="k1">Text opacity</label>   <input id="k1" type="range" min="0" max="1" step="0.05" data-var="--text-opacity"> <span></span>
+  <label for="k2">Fire reach</label>     <input id="k2" type="range" min="0.5" max="4" step="0.1" data-var="--fire-boost"> <span></span>
+  <label for="k3">Stars without fire</label><input id="k3" type="range" min="0" max="1" step="0.05" data-var="--stars-base"> <span></span>
+</div>
+
+<script>
+  // Keep the three copies of the video in step so the light matches across layers.
+  const vids = [...document.querySelectorAll('.scene video')];
+  const lead = vids[0];
+  setInterval(() => {
+    for (const v of vids.slice(1)) {
+      if (Math.abs(v.currentTime - lead.currentTime) > 0.06) v.currentTime = lead.currentTime;
+    }
+  }, 500);
+
+  // Tuning panel wiring
+  const root = document.documentElement;
+  for (const input of document.querySelectorAll('.tuning input')) {
+    const name = input.dataset.var, out = input.nextElementSibling;
+    input.value = getComputedStyle(root).getPropertyValue(name).trim();
+    out.textContent = input.value;
+    input.addEventListener('input', () => {
+      root.style.setProperty(name, input.value);
+      out.textContent = input.value;
+    });
+  }
+</script>
+</body>
+</html>
