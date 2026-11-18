@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-version="favourite">
+<html lang="en" data-version="glow">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -102,10 +102,17 @@
   </div>
 </div>
 
-<!-- Title switcher for feedback (bottom right) -->
-<div class="title-switch" role="group" aria-label="Title style">
-  <button type="button" data-title="1">Title 1</button>
-  <button type="button" data-title="2">Title 2</button>
+<!-- Switchers for feedback (bottom right) -->
+<div class="switches">
+  <div class="style-switch" role="group" aria-label="Animation style">
+    <button type="button" data-style="glow">Glow</button>
+    <button type="button" data-style="fire">Fire</button>
+    <button type="button" data-style="static">Static</button>
+  </div>
+  <div class="title-switch" role="group" aria-label="Title style">
+    <button type="button" data-title="1">Title 1</button>
+    <button type="button" data-title="2">Title 2</button>
+  </div>
 </div>
 
 <script src="scene.js"></script>

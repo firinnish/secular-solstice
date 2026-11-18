@@ -1,5 +1,5 @@
 /* Secular Solstice: shared styles for every version of the page.
-   Each page sets data-version on <html>: "favourite", "flames" or "static".
+   Each page sets data-version on <html>: "glow", "fire" or "static".
    scene.js also sets data-title ("1" or "2") and data-page ("home" or "program"). */
 
 @font-face {
@@ -25,10 +25,10 @@
   --flick-r: 0.5;
 }
 
-/* Version 2: flames instead of people */
-:root[data-version="flames"] { --flame-amt: 0.35; --torch-amt: 0; }
+/* Fire style: flames instead of people */
+:root[data-version="fire"] { --flame-amt: 0.35; --torch-amt: 0; }
 
-/* Version 3: fully still, everything at full strength */
+/* Static style: fully still, everything at full strength */
 :root[data-version="static"] {
   --sky-base: 1; --stars-base: 1; --text-opacity: 1;
   --glow-amt: 0; --torch-amt: 0; --flame-amt: 0;
@@ -197,7 +197,7 @@ canvas.fire { position: absolute; display: block; }
 :root[data-page="program"] .coming-soon { display: flex; }
 
 /* ---- What each version leaves out ---- */
-:root[data-version="flames"] .people-box { display: none; }
+:root[data-version="fire"] .people-box { display: none; }
 :root[data-version="static"] .sky-lit,
 :root[data-version="static"] .stars-lit,
 :root[data-version="static"] .text-fire,
@@ -207,18 +207,21 @@ canvas.fire { position: absolute; display: block; }
 :root[data-version="static"] .lit canvas.fire { display: none; }
 :root[data-version="static"] .splash-lit { mix-blend-mode: normal; }   /* splash shown as painted */
 
-/* ---- Title switcher (bottom right) ---- */
-.title-switch {
+/* ---- Style and title switchers (bottom right) ---- */
+.switches {
   position: fixed; right: 12px; bottom: 12px; z-index: 10;
-  display: flex; gap: 4px; padding: 5px;
-  background: rgba(25,25,25,.8); border-radius: 8px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
   font: 13px system-ui, sans-serif;
 }
-.title-switch button {
+.switches [role="group"] {
+  display: flex; gap: 4px; padding: 5px;
+  background: rgba(25,25,25,.8); border-radius: 8px;
+}
+.switches button {
   font: inherit; color: #eee; background: #333; cursor: pointer;
   border: 1px solid #666; border-radius: 5px; padding: 4px 10px;
 }
-.title-switch button[aria-pressed="true"] { background: #b35a12; border-color: #e08a3a; }
+.switches button[aria-pressed="true"] { background: #b35a12; border-color: #e08a3a; }
 
 /* ---- Tuning panel (only with ?tune in the address) ---- */
 .tuning {

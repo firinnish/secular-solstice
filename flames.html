@@ -1,113 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" data-version="flames">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Secular Solstice</title>
-<link rel="stylesheet" href="style.css">
+<!-- Old link: this style is now a switch on the main page. -->
+<meta http-equiv="refresh" content="0; url=./?style=fire">
+<script>
+  var p = new URLSearchParams(location.search); p.set('style', 'fire');
+  location.replace('./?' + p.toString() + location.hash);
+</script>
 </head>
-<body>
-
-<!-- Effects used by the page (invisible) -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <!-- Stars: hide light below the threshold, make light above it fully bright (set by scene.js) -->
-  <filter id="star-threshold" color-interpolation-filters="sRGB">
-    <feComponentTransfer>
-      <feFuncR type="linear"/><feFuncG type="linear"/><feFuncB type="linear"/>
-    </feComponentTransfer>
-  </filter>
-  <!-- Torch flames: a slowly shifting ripple that bends the painted flames -->
-  <filter id="flame-warp-l" x="-20%" y="-20%" width="140%" height="140%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.04 0.09" numOctaves="2" seed="3" result="n">
-      <animate attributeName="baseFrequency" dur="2.3s" repeatCount="indefinite"
-               values="0.04 0.09; 0.05 0.07; 0.035 0.1; 0.04 0.09"/>
-    </feTurbulence>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
-  </filter>
-  <filter id="flame-warp-r" x="-20%" y="-20%" width="140%" height="140%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.05 0.1" numOctaves="2" seed="11" result="n">
-      <animate attributeName="baseFrequency" dur="1.9s" repeatCount="indefinite"
-               values="0.05 0.1; 0.04 0.08; 0.055 0.11; 0.05 0.1"/>
-    </feTurbulence>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/>
-  </filter>
-</svg>
-
-<div class="scene">
-  <!-- Top 25%: sky painting (dim, brightening where the fire reaches) and stars -->
-  <div class="sky-band">
-    <img class="sky-base" src="sky-band.png" alt="">
-    <div class="lit sky-lit">
-      <img src="sky-band.png" alt="">
-      <canvas class="fire"></canvas>
-    </div>
-    <img class="stars-base" src="stars-band.png" alt="">
-    <div class="lit stars-lit">
-      <img src="stars-band.png" alt="">
-      <canvas class="fire"></canvas>
-    </div>
-  </div>
-
-  <!-- Warm firelight over the whole background -->
-  <div class="layer opt-glow"><canvas class="fire"></canvas></div>
-
-  <!-- Visible flames rising from the bottom edge -->
-  <div class="layer opt-flames"><canvas class="fire"></canvas></div>
-
-  <!-- Bottom 25%: the people, with flickering torches -->
-  <div class="people-box">
-    <div class="torch left"></div>
-    <div class="torch right"></div>
-    <img class="people-base" src="people-base.png" alt="">
-    <img class="flame left" src="flame-left.png" alt="">
-    <img class="flame right" src="flame-right.png" alt="">
-  </div>
-
-  <!-- Program page: replaces the people -->
-  <p class="coming-soon">Coming soon</p>
-
-  <!-- Middle 50%: year, title, menu -->
-  <div class="middle">
-    <img class="year" src="2026.png" alt="2026">
-
-    <!-- Title 1: splash (only where firelit), lettering, fire glowing through the lettering -->
-    <div class="title-box t1" role="heading" aria-level="1">
-      <div class="lit splash-lit">
-        <img src="smudge.png" alt="">
-        <canvas class="fire"></canvas>
-      </div>
-      <img class="text-base" src="text.png" alt="Secular Solstice">
-      <div class="text-fire" aria-hidden="true"><canvas class="fire"></canvas></div>
-    </div>
-
-    <!-- Title 2: same layers, new lettering and splash -->
-    <div class="title-box t2" role="heading" aria-level="1">
-      <div class="lit splash-lit">
-        <img src="title-b-splash.png" alt="">
-        <canvas class="fire"></canvas>
-      </div>
-      <img class="text-base" src="title-b-text.png" alt="Secular Solstice">
-      <div class="text-fire" aria-hidden="true"><canvas class="fire"></canvas></div>
-    </div>
-
-    <nav class="menu" aria-label="Main">
-      <a href="#home" data-page="home"><img src="menu/home.png" alt="Home"></a>
-      <a href="#program" data-page="program"><img src="menu/program.png" alt="Program"></a>
-      <a href="https://www.eventbrite.com/e/bay-area-secular-solstice-2026-tickets-2004527583964" target="_blank" rel="noopener"><img src="menu/tickets.png" alt="Tickets"></a>
-      <a href="https://partiful.com/events/QCfT35d3zo9BMti8f3sm/" target="_blank" rel="noopener"><img src="menu/partiful.png" alt="Partiful"></a>
-      <a href="https://www.lesswrong.com/posts/YXe6Ni3vMCYdNWmqN/bay-area-solstice-2026-auditions" target="_blank" rel="noopener"><img src="menu/auditions.png" alt="Auditions"></a>
-      <a href="https://open.spotify.com/playlist/4cjj2xFFtVw1xn0FonQDgu?si=fca6d054ec1f41da" target="_blank" rel="noopener"><img src="menu/playlist.png" alt="Playlist"></a>
-      <a href="https://www.lesswrong.com/events/umzGbxosnsxKPLQpX/bay-area-winter-solstice" target="_blank" rel="noopener"><img src="menu/lesswrong.png" alt="LessWrong"></a>
-    </nav>
-  </div>
-</div>
-
-<!-- Title switcher for feedback (bottom right) -->
-<div class="title-switch" role="group" aria-label="Title style">
-  <button type="button" data-title="1">Title 1</button>
-  <button type="button" data-title="2">Title 2</button>
-</div>
-
-<script src="scene.js"></script>
-</body>
+<body></body>
 </html>
