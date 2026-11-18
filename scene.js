@@ -22,6 +22,37 @@
   }
   setStarThreshold(starThreshold);
 
+  // ---------- Which title (1 or 2), remembered in the address as ?title=2 ----------
+  let relayout = () => {};          // replaced below once the fire canvases exist
+  const params = new URLSearchParams(location.search);
+  function setTitle(n) {
+    root.dataset.title = n;
+    for (const b of document.querySelectorAll('.title-switch button')) {
+      b.setAttribute('aria-pressed', String(b.dataset.title === n));
+    }
+    const p = new URLSearchParams(location.search);
+    if (n === '1') p.delete('title'); else p.set('title', n);
+    const q = p.toString();
+    history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+    relayout();
+  }
+  setTitle(params.get('title') === '2' ? '2' : '1');
+  for (const b of document.querySelectorAll('.title-switch button')) {
+    b.addEventListener('click', () => setTitle(b.dataset.title));
+  }
+
+  // ---------- Home / Program (address ends in #program for the program page) ----------
+  function setPage() {
+    const page = location.hash === '#program' ? 'program' : 'home';
+    root.dataset.page = page;
+    for (const a of document.querySelectorAll('.menu a[data-page]')) {
+      if (a.dataset.page === page) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    }
+  }
+  setPage();
+  addEventListener('hashchange', setPage);
+
   if (isStatic) { buildTuning(); return; }
 
   // ---------- The fire video ----------
@@ -59,8 +90,11 @@
       });
     }
   }
+  relayout = () => { layout(); lastTime = -1; };
   layout();
-  addEventListener('resize', () => { layout(); lastTime = -1; });
+  addEventListener('resize', relayout);
+  addEventListener('load', relayout);           // images/fonts loaded: boxes may have moved
+  if (document.fonts) document.fonts.ready.then(relayout);
 
   // ---------- Paint each frame + measure the flicker ----------
   const probe = document.createElement('canvas'); probe.width = 8; probe.height = 4;
@@ -119,7 +153,6 @@
       ['Star threshold', 'star', 0.2, 1.2, 0.05],
       ['Fire speed', 'speed', 0.25, 1, 0.05],
       ['Text size', '--text-width', 15, 80, 0.1, 'vw'],
-      ['Title height', '--title-y', 26, 74, 1, '%'],
     ];
     const panel = document.createElement('div');
     panel.className = 'tuning';
@@ -134,7 +167,7 @@
         o.textContent = i.value;
         if (key === 'star') setStarThreshold(+i.value);
         else if (key === 'speed') { if (!isStatic) { fireSpeed = +i.value; setSpeed(); } }
-        else { root.style.setProperty(key, i.value + unit); if (!isStatic) layout(); }
+        else { root.style.setProperty(key, i.value + unit); relayout(); }
       });
       panel.append(l, i, o);
     }
